@@ -1,0 +1,41 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }}Tweet detail{% endblock title %}
+{% block content %}
+
+<div class="row">
+  <div class="col-sm-3">
+    <h2>{{ object.username }}</h2>
+    <p>
+      <a class="btn btn-link" href="{% url 'profiles:follow' username=object.username %}">
+        {% if following %} Unfollow {% else %} Follow {% endif %}
+      </a>
+    </p>
+    <h5>Followers: {{ object.followed_by.all.count }}</h5>
+    <h5>Following: {{ object.profile.get_following.count }}</h5>
+  </div>
+  <div class="col-sm-9">
+    <h1>Tweets</h1>
+    {% for tweet in object.tweet_set.all %}
+      {{ tweet }} <br/>
+    {% endfor %}
+
+    <h3>Following <small>{{ object.profile.get_following.count }}</small></h3>
+    {% for user in object.profile.get_following %}
+    <a href="/{{ user.username }}">
+      {{ user.username }}
+    </a> <br/>
+      {% empty %}
+      <p>This user isn't following anyone yet.</p>
+    {% endfor %}
+
+    <h3>Followers <small>{{ object.followed_by.all.count }}</small></h3>
+    {% for profile in object.followed_by.all %}
+      <a href="/{{ profile.user.username }}">{{ profile.user.username }}</a><br/>
+    {% empty %}
+      <p>This user doesn't have any followers yet.</p>
+    {% endfor %}
+  </div>
+</div>
+
+
+{% endblock content %}

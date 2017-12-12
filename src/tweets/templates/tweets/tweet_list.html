@@ -1,0 +1,167 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }}Tweet list{% endblock title %}
+
+{% block script %}
+
+  <script>
+    function getParameterByName(name, url) {
+        if (!url) url = window.location.href;
+        name = name.replace(/[\[\]]/g, "\\$&");
+        var regex = new RegExp("[?&]" + name + "(=([^&#]*)|&|#|$)"),
+            results = regex.exec(url);
+        if (!results) return null;
+        if (!results[2]) return '';
+        return decodeURIComponent(results[2].replace(/\+/g, " "));
+    }
+
+    $(document).ready(function(){
+
+      var query = getParameterByName('q');
+      var tweetList = [];
+      var nextTweetUrl;
+
+      function attachTweet(tweetValue, prepend){
+        var timeSince = tweetValue.time_since;
+        var tweetContent = tweetValue.content;
+        var tweetUser = tweetValue.user;
+        var userUrl = tweetUser.url;
+        var tweetUrl = tweetValue.id;
+
+        var tweetHtml = "<div class='media'><div class='media-body'>"
+        + tweetContent + "<br/>via "
+        + "<a href='" + userUrl + "'>" + tweetUser.username
+        + "</a> | " + timeSince + " | "
+        + "<a href='/tweet/" + tweetUrl + "'>View</a></div></div><hr/>";
+
+        if (prepend == true) {
+          $("#tweet-container").prepend(tweetHtml);
+        } else {
+          $("#tweet-container").append(tweetHtml);
+        }
+      }
+
+
+      function parseTweets(tweetList){
+        if (tweetList.length > 0) {
+          $.each(tweetList, function(key, value){
+            var tweetKey = key;
+            attachTweet(value, false);
+          });
+        } else {
+          $("#tweet-container").text("Search yielded no tweets.");
+        }
+      }
+
+      function fetchTweets(url){
+        var fetchUrl;
+
+        if (!url) {
+          fetchUrl = "/api/tweet/"
+        } else {
+          fetchUrl = url;
+          console.log(url);
+        }
+
+        $.ajax({
+          url: fetchUrl,
+          data: {
+            'q': query
+          },
+          method: "GET",
+          success: function(data){
+            tweetList = data.results;
+
+            if (data.next) {
+              nextTweetUrl = data.next;
+            } else {
+              $("#loadmore").css("display", "none");
+            }
+
+            parseTweets(tweetList);
+          },
+          error: function(data) {
+            console.log("Error in AJAX request for tweets. Printing data...");
+            console.log(data);
+          }
+        })
+      }
+
+      fetchTweets();
+      $("#loadmore").click(function(event){
+        event.preventDefault();
+        if (nextTweetUrl) {
+          fetchTweets(nextTweetUrl);
+        }
+      })
+
+      var charsStart = 140;
+      var charsLeft = 0;
+      $("#tweet-form").append("<span id='tweetCharsLeft'>" + charsStart + "</span>");
+
+      $("#tweet-form textarea").keyup(function(event){
+        var tweetValue = $(this).val();
+        charsLeft = charsStart - tweetValue.length;
+        var spanChars = $("#tweetCharsLeft")
+        spanChars.text(charsLeft);
+
+        if (charsLeft > 0) {
+          spanChars.removeClass("grey-color");
+          spanChars.removeClass("red-color");
+        } else if (charsLeft == 0) {
+          spanChars.removeClass("red-color");
+          spanChars.addClass("grey-color");
+        } else if (charsLeft < 0) {
+          spanChars.removeClass("grey-color");
+          spanChars.addClass("red-color");
+        }
+      })
+
+      $("#tweet-form").submit(function(event){
+        event.preventDefault();
+        var this_ = $(this);
+        var formData = this_.serialize();
+
+        if (charsLeft >= 0) {
+          $.ajax({
+            url: "/api/tweet/create/",
+            data: formData,
+            method: "POST",
+            success: function(data){
+              this_.find("input[type=text], textarea").val("");
+              attachTweet(data, true);
+              $("#tweetCharsLeft").text("140");
+            },
+            error: function(data) {
+              console.log("Error in AJAX request to POST tweet. " + data.status + " " + data.statusText);
+            }
+          })
+        } else {
+          console.log("cannot send -  tweet too long");
+        }
+
+      })
+
+
+    });
+  </script>
+
+{% endblock script %}
+
+{% block content %}
+
+  <div class="row">
+    <div class="col-sm-3">
+      <h2>{{ request.user }}</h2>
+    </div>
+    <div class="col-sm-9">
+      {% if not request.GET.q %}
+        <div class="row">
+          {% include "tweets/form.html" with form=create_form action_url=create_url btn_title="Tweet" form_id='tweet-form' %}
+        </div>
+      {% endif %}
+      <div id="tweet-container"></div>
+      <a href="#" id="loadmore">Load more tweets</a>
+    </div>
+  </div>
+
+{% endblock content %}

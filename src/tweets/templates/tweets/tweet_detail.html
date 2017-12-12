@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }}Tweet detail{% endblock title %}
+{% block content %}
+
+<div class="row">
+  <div class="col-sm-3">
+    <h2>{{ request.user }}</h2>
+  </div>
+  <div class="col-sm-9">
+    {{ object.user }}<br/>
+    {{ object.content }}<br/>
+    {{ object.timestamp|timesince }} ago<br/>
+  </div>
+</div>
+
+
+{% endblock content %}
