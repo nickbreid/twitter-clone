@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}{{ block.super }}Tweet list{% endblock title %}
+
+{% block content %}
+
+  <div class="row">
+    <div class="col-sm-3">
+      <h2>{{ obj.tag }}</h2>
+    </div>
+    <div class="col-sm-9">
+      {% for tweet in obj.get_tweets %}
+        {{ tweet.content }} <br/>
+      {% endfor %}
+    </div>
+  </div>
+
+{% endblock content %}
