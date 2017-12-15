@@ -64,6 +64,31 @@
 
       var initialURL = $("#tweet-container").attr("data-url") || "/api/tweet/";
 
+      $(document.body).on("click", ".tweet-like", function(event){
+        event.preventDefault();
+        var this_ = $(this)
+        var tweetId = this_.attr("data-id");
+        var likedUrl = '/api/tweet/' + tweetId + "/like/";
+
+        $.ajax({
+          method: "GET",
+          url: likedUrl,
+          success: function(data){
+            if (data.liked) {
+              console.log(data)
+              this_.text("Liked");
+            } else {
+              console.log(data)
+              this_.text("Like");
+            }
+          },
+          error: function(data) {
+            console.log("Error liking tweet. Printing data...");
+            console.log(data);
+          }
+        })
+      })
+
       $(document.body).on("click", ".retweetBtn", function(event){
 
         event.preventDefault();
@@ -108,10 +133,19 @@
         var userUrl = tweetUser.url;
         var tweetUrl = tweetValue.id;
         var tweetHtml;
+        var verb = 'Like';
+        if (tweetValue.did_like) {
+          verb = 'Unlike';
+        }
 
         // retweet
         if (retweet && tweetValue.parent) {
           var originalTweet = tweetValue.parent;
+
+          if (originalTweet.did_like) {
+            verb = 'Unlike';
+          }
+
           var retweeter = tweetUser;
           tweetHtml = "<div class='media'><div class='media-body'>"
           + "<p class='grey-color'>Retweeted by " + retweeter.username + "</p>"
@@ -119,7 +153,8 @@
           + "<a href='" + originalTweet.user.url + "'>" + originalTweet.user.username
           + "</a> | " + originalTweet.time_since + " | "
           + "<a href='/tweet/" + originalTweet.id +"'>View</a>" + " | "
-          + "<a class='retweetBtn' href='/tweet/" + originalTweet.id + "/retweet'>Retweet</a>"
+          + "<a class='retweetBtn' href='/tweet/" + originalTweet.id + "/retweet'>Retweet</a>" + " | "
+          + "<a class='tweet-like' href='#' data-id=" + originalTweet.id + ">" + verb + " (" + tweetValue.parent.likes + ")</a>"
           + "</div></div><hr/>";
         }
         // fresh tweet
@@ -129,7 +164,8 @@
           + "<a href='" + tweetUser.url + "'>" + tweetUser.username
           + "</a> | " + timeSince + " | "
           + "<a href='/tweet/" + tweetUrl + "'>View</a>" + " | "
-          + "<a class='retweetBtn' href='/tweet/" + tweetUrl + "/retweet'>Retweet</a>"
+          + "<a class='retweetBtn' href='/tweet/" + tweetUrl + "/retweet'>Retweet</a>" + " | "
+          + "<a class='tweet-like' href='#' data-id=" + tweetValue.id + ">" + verb + " (" + tweetValue.likes + ")</a>"
           + "</div></div><hr/>";
         }
 
