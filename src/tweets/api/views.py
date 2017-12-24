@@ -37,6 +37,23 @@ class TweetCreateAPIView(generics.CreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user = self.request.user)
 
+class TweetDetailAPIView(generics.ListAPIView):
+    serializer_class = TweetModelSerializer
+    permission_classes = [permissions.AllowAny]
+    pagination_class = StandardResultsPagination
+
+    queryset = Tweet.objects.all()
+
+    def get_queryset(self, *args, **kwargs):
+        tweet_id = self.kwargs.get("pk")
+        qs = Tweet.objects.filter(pk=tweet_id)
+        if qs.exists() and qs.count() == 1:
+            parent_obj = qs.first()
+            qs1 = parent_obj.get_children()
+            qs = ( qs | qs1 ).distinct().extra(select={"parent_id_null": 'parent_id is NULL'})
+        return qs.order_by('-parent_id_null', 'timestamp')
+
+
 class TweetListAPIView(generics.ListAPIView):
 
     serializer_class = TweetModelSerializer

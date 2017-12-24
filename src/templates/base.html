@@ -25,6 +25,9 @@
     .grey-color {
       color: grey;
     }
+    .media-focus {
+      background-color: #daf7d5;
+    }
     </style>
   </head>
   <body>
@@ -50,7 +53,7 @@
         return decodeURIComponent(results[2].replace(/\+/g, " "));
     }
 
-    function loadTweetContainer(tweetContainerID) {
+    function loadTweetContainer(tweetContainerID, fetchOneId) {
       var query = getParameterByName('q');
       var tweetList = [];
       var nextTweetUrl;
@@ -155,6 +158,19 @@
         var retweetPreamble = "";
         var retweeter = tweetValue.user.username;
         var isReply = tweetValue.reply;
+        var replyId = tweetValue.id;
+
+        if (tweetValue.parent) {
+          replyId = tweetValue.parent.id;
+        }
+
+        var focusClass = "";
+        if (tweetValue.id == fetchOneId) {
+          focusClass = "media-focus";
+          setTimeout(function(){
+            $('.media-focus').css({"backgroundColor": '#FFF'})
+          }, 2000)
+        }
 
         if (tweetValue.parent && !isReply) {
           tweetValue = tweetValue.parent;
@@ -183,9 +199,9 @@
         + "<a class='retweetBtn' href='/tweet/" + tweetValue.id + "/retweet'>Retweet</a>" + " | "
         // => Like (1) (links to like API endpoint & displays count of likes)
         + "<a class='tweet-like' href='#' data-id='" + tweetValue.id + "'>" + likeVerb + " (" + tweetValue.likes + ")</a> | "
-        + "<a class='tweet-reply' href='#' data-user='" + tweetValue.user.username + "' data-id='" + tweetValue.id + "'>Reply</a>";
+        + "<a class='tweet-reply' href='#' data-user='" + tweetValue.user.username + "' data-id='" + replyId + "'>Reply</a>";
 
-        var container = "<div class='media'><div class='media-body'>" + tweetContent + "</div></div><hr/>";
+        var container = "<div class='media'><div class='media-body " + focusClass + "'>" + tweetContent + "</div></div><hr/>";
         return container;
       }
 
@@ -250,7 +266,34 @@
         })
       }
 
-      fetchTweets();
+      function fetchSingle(id){
+        var fetchDetailUrl = '/api/tweet/' + fetchOneId + '/';
+
+        $.ajax({
+          url: fetchDetailUrl,
+          method: "GET",
+          success: function(data){
+            console.log(data);
+            tweetList = data.results;
+
+            parseTweets();
+            updateHashLinks();
+          },
+          error: function(data) {
+            console.log("Error in AJAX request for tweets. Printing data...");
+            console.log(data);
+          }
+        })
+      }
+
+
+      if (fetchOneId) {
+        fetchSingle(fetchOneId);
+      } else {
+        fetchTweets();
+      }
+
+
       $("#loadmore").click(function(event){
         event.preventDefault();
         if (nextTweetUrl) {
