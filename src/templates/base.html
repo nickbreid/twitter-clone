@@ -129,7 +129,7 @@
         $("#replyModal textarea").after("<input type='hidden' value='" + true + "' name='reply' />")
         $("#replyModal textarea").val("@" + username + " ")
         $("#replyModal").on("shown.bs.modal", function(){
-          console.log("triggered shown")
+          console.log("showing modal")
           $('#tweetReplyArea').focus()
         })
       })
@@ -266,7 +266,6 @@
         var tweetValue = $(this).val();
         charsLeft = charsStart - tweetValue.length;
         var spanChars = $(this).parent().parent().parent().find(".tweetCharsLeft")
-        console.log(charsLeft);
         spanChars.text(charsLeft);
 
         if (charsLeft > 0) {
