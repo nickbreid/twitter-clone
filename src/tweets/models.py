@@ -48,6 +48,7 @@ class Tweet(models.Model):
     liked       = models.ManyToManyField(settings.AUTH_USER_MODEL, blank=True, related_name='liked')
     updated     = models.DateTimeField(auto_now=True)
     timestamp   = models.DateTimeField(auto_now_add=True)
+    reply       = models.BooleanField(verbose_name='Is a reply?', default=False)
 
     objects = TweetManager()
 

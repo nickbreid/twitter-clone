@@ -21,7 +21,7 @@ class ParentTweetModelSerializer(serializers.ModelSerializer):
             'time_since',
             'id',
             'likes',
-            'did_like'
+            'did_like',
 
         ]
 
@@ -45,6 +45,7 @@ class ParentTweetModelSerializer(serializers.ModelSerializer):
 
 
 class TweetModelSerializer(serializers.ModelSerializer):
+    parent_id = serializers.CharField(write_only=True, required=False)
     user = UserDisplaySerializer(read_only=True)
     date_display = serializers.SerializerMethodField()
     time_since = serializers.SerializerMethodField()
@@ -64,9 +65,12 @@ class TweetModelSerializer(serializers.ModelSerializer):
             'id',
             'parent',
             'likes',
-            'did_like'
+            'did_like',
+            'reply',
+            'parent_id',
 
         ]
+        # read_only_fields = ['reply']
 
     def get_did_like(self, obj):
         request = self.context.get("request")

@@ -13,15 +13,21 @@
 
 {% block content %}
 
-  <div class="row">
-    <div class="col-sm-3">
-      <h2>{{ request.user }}</h2>
-    </div>
-    <div class="col-sm-9">
-      {% if not request.GET.q %}
-        <div class="row">
-          {% include "tweets/form.html" with form=create_form action_url=create_url btn_title="Tweet" form_id='tweet-form' %}
-        </div>
+<div class='row'>
+  <div class='col-sm-3 col-xs-12'>
+  <h1>{{ request.user }}</h1>
+  <hr/>
+   <br/>
+  </div>
+
+  <div class='col-sm-9 '>
+       {% if not request.GET.q %}
+          <div class=''>
+
+              {% include "tweets/form.html" with form=create_form action_url=create_url btn_title='Tweet' form_class='tweet-form' %}
+
+          </div>
+          <hr/>
       {% endif %}
       <div id="tweet-container" data-url='/api/tweet/'></div>
       <a href="#" id="loadmore">Load more tweets</a>
