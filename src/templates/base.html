@@ -30,6 +30,7 @@
   <body>
     <div class="container">
       {% include "navbar.html" %}
+      {% include "reply-modal.html" %}
       {% block content %}
       {% endblock content %}
 
@@ -100,7 +101,7 @@
           url: url,
           success: function(data) {
             if (initialURL == "/api/tweet/") {
-              attachTweet(data, true, true);
+              attachTweet(data, true);
               updateHashLinks();
             }
           },
@@ -108,6 +109,28 @@
             console.log("error");
             console.log(data);
           }
+        })
+      })
+
+      $(document.body).on("click", ".tweet-reply", function(event){
+
+        event.preventDefault();
+        console.log("clicked reply button")
+
+
+        var this_ = $(this)
+        var parentId = this_.attr("data-id")
+        var username = this_.attr("data-user")
+
+
+        $(".tweetCharsLeft:eq(0)").text(138 - username.length);
+        $("#replyModal").modal({})
+        $("#replyModal textarea").after("<input type='hidden' value='" + parentId + "' name='parent_id' />")
+        $("#replyModal textarea").after("<input type='hidden' value='" + true + "' name='reply' />")
+        $("#replyModal textarea").val("@" + username + " ")
+        $("#replyModal").on("shown.bs.modal", function(){
+          console.log("triggered shown")
+          $('#tweetReplyArea').focus()
         })
       })
 
@@ -126,49 +149,50 @@
         })
       }
 
-      function attachTweet(tweetValue, prepend, retweet){
-        var timeSince = tweetValue.time_since;
-        var tweetContent = tweetValue.content;
-        var tweetUser = tweetValue.user;
-        var userUrl = tweetUser.url;
-        var tweetUrl = tweetValue.id;
-        var tweetHtml;
-        var verb = 'Like';
-        if (tweetValue.did_like) {
-          verb = 'Unlike';
-        }
+      function formatTweet(tweetValue) {
 
-        // retweet
-        if (retweet && tweetValue.parent) {
-          var originalTweet = tweetValue.parent;
+        var likeVerb = 'Like';
+        var retweetPreamble = "";
+        var retweeter = tweetValue.user.username;
+        var isReply = tweetValue.reply;
 
-          if (originalTweet.did_like) {
-            verb = 'Unlike';
+        if (tweetValue.parent && !isReply) {
+          tweetValue = tweetValue.parent;
+          if (tweetValue.did_like) {
+            likeVerb = 'Unlike';
           }
-
-          var retweeter = tweetUser;
-          tweetHtml = "<div class='media'><div class='media-body'>"
-          + "<p class='grey-color'>Retweeted by " + retweeter.username + "</p>"
-          + originalTweet.content + "<br/>via "
-          + "<a href='" + originalTweet.user.url + "'>" + originalTweet.user.username
-          + "</a> | " + originalTweet.time_since + " | "
-          + "<a href='/tweet/" + originalTweet.id +"'>View</a>" + " | "
-          + "<a class='retweetBtn' href='/tweet/" + originalTweet.id + "/retweet'>Retweet</a>" + " | "
-          + "<a class='tweet-like' href='#' data-id=" + originalTweet.id + ">" + verb + " (" + tweetValue.parent.likes + ")</a>"
-          + "</div></div><hr/>";
-        }
-        // fresh tweet
-        else {
-          tweetHtml = "<div class='media'><div class='media-body'>"
-          + tweetContent + "<br/>via "
-          + "<a href='" + tweetUser.url + "'>" + tweetUser.username
-          + "</a> | " + timeSince + " | "
-          + "<a href='/tweet/" + tweetUrl + "'>View</a>" + " | "
-          + "<a class='retweetBtn' href='/tweet/" + tweetUrl + "/retweet'>Retweet</a>" + " | "
-          + "<a class='tweet-like' href='#' data-id=" + tweetValue.id + ">" + verb + " (" + tweetValue.likes + ")</a>"
-          + "</div></div><hr/>";
+          retweetPreamble = "<p class='grey-color'>Retweeted by " + retweeter + "</p>"
+        } else if (tweetValue.parent && isReply){
+          retweetPreamble = "<p class='grey-color'>Reply to " + tweetValue.parent.user.username + "</p>"
         }
 
+        if (tweetValue.did_like) {
+          likeVerb = 'Unlike';
+        }
+
+        // if retweet, then => Retweeted by user
+        // Followed by => {Tweet content here}
+        var tweetContent = retweetPreamble + tweetValue.content + "<br/>"
+        // => via Username (links to user profile)
+        + "via <a href='" + tweetValue.user.url + "'>" + tweetValue.user.username + "</a> | "
+        // => 2 hours, 26 minutes ago |
+        + tweetValue.time_since + " | "
+        // => View | (links to tweet detail view)
+        + "<a href='/tweet/" + tweetValue.id + "'>View</a>" + " | "
+        // => Retweet | (links to retweet API endpoint)
+        + "<a class='retweetBtn' href='/tweet/" + tweetValue.id + "/retweet'>Retweet</a>" + " | "
+        // => Like (1) (links to like API endpoint & displays count of likes)
+        + "<a class='tweet-like' href='#' data-id='" + tweetValue.id + "'>" + likeVerb + " (" + tweetValue.likes + ")</a> | "
+        + "<a class='tweet-reply' href='#' data-user='" + tweetValue.user.username + "' data-id='" + tweetValue.id + "'>Reply</a>";
+
+        var container = "<div class='media'><div class='media-body'>" + tweetContent + "</div></div><hr/>";
+        return container;
+      }
+
+      function attachTweet(tweetValue, prepend){
+        var tweetHtml = formatTweet(tweetValue);
+
+        // with prepend argument, tweet added to the top of container, not bottom
         if (prepend == true) {
           tweetContainer.prepend(tweetHtml);
         } else {
@@ -176,13 +200,12 @@
         }
       }
 
-
       function parseTweets(){
         if (tweetList.length > 0) {
           $.each(tweetList, function(key, value){
             var tweetKey = key;
             if (value.parent) {
-              attachTweet(value, false, true);
+              attachTweet(value, false);
             } else {
               attachTweet(value);
             }
@@ -237,12 +260,13 @@
 
       var charsStart = 140;
       var charsLeft = 0;
-      $("#tweet-form").append("<span id='tweetCharsLeft'>" + charsStart + "</span>");
+      $(".tweet-form").append("<span class='tweetCharsLeft' style='margin-left: 10px; margin-bottom: 10px;'>" + charsStart + "</span>");
 
-      $("#tweet-form textarea").keyup(function(event){
+      $(".tweet-form textarea").keyup(function(event){
         var tweetValue = $(this).val();
         charsLeft = charsStart - tweetValue.length;
-        var spanChars = $("#tweetCharsLeft")
+        var spanChars = $(this).parent().parent().parent().find(".tweetCharsLeft")
+        console.log(charsLeft);
         spanChars.text(charsLeft);
 
         if (charsLeft > 0) {
@@ -257,7 +281,7 @@
         }
       })
 
-      $("#tweet-form").submit(function(event){
+      $(".tweet-form").submit(function(event){
         event.preventDefault();
         var this_ = $(this);
         var formData = this_.serialize();
@@ -272,6 +296,7 @@
               attachTweet(data, true);
               $("#tweetCharsLeft").text("140");
               updateHashLinks();
+              $("#replyModal").modal("hide")
             },
             error: function(data) {
               console.log("Error in AJAX request to POST tweet. " + data.status + " " + data.statusText);
