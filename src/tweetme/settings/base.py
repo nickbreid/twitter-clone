@@ -40,7 +40,8 @@ INSTALLED_APPS = [
     "rest_framework",
     'tweets',
     'crispy_forms',
-    'accounts'
+    'accounts',
+    'hashtags'
 ]
 
 MIDDLEWARE = [
