@@ -1,17 +1,34 @@
+
 {% extends "base.html" %}
 {% block title %}{{ block.super }}Tweet list{% endblock title %}
 
+{% block script %}
+
+  <script>
+    $(document).ready(function(){
+      loadTweetContainer("tweet-container");
+    });
+  </script>
+
+{% endblock script %}
+
 {% block content %}
 
-  <div class="row">
-    <div class="col-sm-3">
-      <h2>{{ obj.tag }}</h2>
-    </div>
-    <div class="col-sm-9">
-      {% for tweet in obj.get_tweets %}
-        {{ tweet.content }} <br/>
-      {% endfor %}
-    </div>
+<div class='row'>
+
+  <div class="col-sm-12">
+    {% if request.GET.q %}
+      <p class="lead">Results for {{request.GET.q}}</p>
+    {% endif %}
   </div>
+
+  <div class='col-sm-8 col-sm-offset-2 col-xs-12'>
+    <h1>Tweets for #{{ obj.tag }}</h1>
+    <hr/>
+    <div id="tweet-container" data-url='/api/tags/{{ obj.tag }}'></div>
+    <a href="#" id="loadmore">Load more tweets</a>
+  </div>
+
+</div>
 
 {% endblock content %}
