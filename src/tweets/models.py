@@ -19,7 +19,7 @@ class TweetManager(models.Manager):
         else:
             original_parent = parent_obj
 
-        qs = self.get_queryset().filter(user=user, parent=original_parent)
+        qs = self.get_queryset().filter(user=user, parent=original_parent).filter(reply=False)
 
         if qs.exists():
             return None
