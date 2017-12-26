@@ -1,4 +1,6 @@
 {% extends "base.html" %}
+{% load recommended %}
+
 {% block title %}{{ block.super }}Tweet list{% endblock title %}
 
 {% block script %}
@@ -17,7 +19,7 @@
   <div class='col-sm-3 col-xs-12'>
   <h1>{{ request.user }}</h1>
   <hr/>
-   <br/>
+  {% recommended request.user %}
   </div>
 
   <div class='col-sm-9 '>

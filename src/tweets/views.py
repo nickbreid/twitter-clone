@@ -83,7 +83,7 @@ class TweetDetailView(DetailView):
     #     pk = self.kwargs.get("pk")
     #     return Tweet.objects.get(id=pk)
 
-class TweetListView(ListView):
+class TweetListView(LoginRequiredMixin, ListView):
 
     def get_queryset(self, *args, **kwargs):
         qs = Tweet.objects.all()

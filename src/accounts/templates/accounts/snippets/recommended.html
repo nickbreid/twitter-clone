@@ -1,0 +1,6 @@
+<p class="lead">Recommended</p>
+{% for profile in recommended %}
+  <a href="/{{ profile.user.username }}">{{ profile.user.username }}</a><br/>
+{% empty %}
+  <p>This user doesn't have any followers yet.</p>
+{% endfor %}
